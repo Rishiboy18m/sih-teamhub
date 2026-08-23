@@ -6,10 +6,14 @@ const fs = require('fs');
 const { get, query, run } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 
-// Storage configuration with serverless /tmp fallback
+// Storage configuration with serverless /tmp fallback and try/catch for read-only filesystems
 const uploadsDir = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, '../uploads');
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
+try {
+  if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+  }
+} catch (err) {
+  console.warn('Could not create uploads directory on read-only filesystem:', err.message);
 }
 
 // Allowed file extensions for Security (Section 26 requirement)
