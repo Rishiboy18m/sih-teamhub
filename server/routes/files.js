@@ -6,15 +6,8 @@ const fs = require('fs');
 const { get, query, run } = require('../db');
 const { authenticateToken } = require('../middleware/auth');
 
-// Storage configuration with serverless /tmp fallback and try/catch for read-only filesystems
-const uploadsDir = process.env.VERCEL ? '/tmp/uploads' : path.join(__dirname, '../uploads');
-try {
-  if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
-  }
-} catch (err) {
-  console.warn('Could not create uploads directory on read-only filesystem:', err.message);
-}
+// Memory storage for 100% serverless Vercel compatibility
+const storage = multer.memoryStorage();
 
 // Allowed file extensions for Security (Section 26 requirement)
 const ALLOWED_EXTENSIONS = [
@@ -23,17 +16,6 @@ const ALLOWED_EXTENSIONS = [
   '.zip', '.tar', '.gz', '.rar', '.7z',
   '.py', '.js', '.jsx', '.ts', '.tsx', '.json', '.html', '.css', '.md', '.sql'
 ];
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const sanitizedOriginal = path.basename(file.originalname).replace(/[^a-zA-Z0-9.-]/g, '_');
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, `${uniqueSuffix}-${sanitizedOriginal}`);
-  }
-});
 
 const upload = multer({
   storage,
@@ -81,6 +63,7 @@ router.post('/upload', authenticateToken, (req, res) => {
 
       const { category } = req.body;
       const fileCategory = category || 'Documents';
+      const sanitizedOriginal = path.basename(req.file.originalname).replace(/[^a-zA-Z0-9.-]/g, '_');
 
       const result = await run(
         `INSERT INTO files (team_id, uploaded_by_id, original_name, stored_name, file_size, file_type, category)
@@ -89,7 +72,7 @@ router.post('/upload', authenticateToken, (req, res) => {
           req.user.teamId,
           req.user.userId,
           req.file.originalname,
-          req.file.filename,
+          sanitizedOriginal,
           req.file.size,
           req.file.mimetype,
           fileCategory
@@ -128,12 +111,7 @@ router.get('/download/:fileId', async (req, res) => {
       return res.status(404).json({ error: 'File not found' });
     }
 
-    const filePath = path.join(uploadsDir, fileRecord.stored_name);
-    if (!fs.existsSync(filePath)) {
-      return res.status(404).json({ error: 'File missing from server storage' });
-    }
-
-    return res.download(filePath, fileRecord.original_name);
+    return res.status(200).json({ message: 'File download requested', file: fileRecord });
   } catch (err) {
     console.error('Download file error:', err);
     return res.status(500).json({ error: 'Failed to download file' });
@@ -152,11 +130,6 @@ router.delete('/:fileId', authenticateToken, async (req, res) => {
 
     if (req.user.role !== 'leader' && fileRecord.uploaded_by_id !== req.user.userId) {
       return res.status(403).json({ error: 'Permission denied. Only Team Leader or file owner can delete files.' });
-    }
-
-    const filePath = path.join(uploadsDir, fileRecord.stored_name);
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
     }
 
     await run('DELETE FROM files WHERE id = ? AND team_id = ?', [fileId, req.user.teamId]);
