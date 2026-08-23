@@ -25,18 +25,22 @@ app.use(express.json());
 let dbInitialized = false;
 let dbInitPromise = null;
 
-app.use(async (req, res, next) => {
+app.use((req, res, next) => {
   if (!dbInitialized) {
     if (!dbInitPromise) {
-      dbInitPromise = initDB().then(() => {
-        dbInitialized = true;
-      }).catch(err => {
-        console.error('Database initialization error:', err);
-      });
+      dbInitPromise = initDB()
+        .then(() => {
+          dbInitialized = true;
+        })
+        .catch(err => {
+          console.error('Database initialization error:', err);
+          dbInitialized = true; // prevent infinite retries
+        });
     }
-    await dbInitPromise;
+    dbInitPromise.then(() => next()).catch(() => next());
+  } else {
+    next();
   }
-  next();
 });
 
 // Routes with both /api prefix and direct path for Vercel serverless rewrites
@@ -67,6 +71,12 @@ app.use('/search', searchRoutes);
 // Base Health Check
 app.get(['/api/health', '/health'], (req, res) => {
   res.json({ status: 'ok', service: 'SIH TeamHub API', timestamp: new Date().toISOString() });
+});
+
+// Global Express Error Handler for Serverless Resilience
+app.use((err, req, res, next) => {
+  console.error('Serverless Express Error:', err);
+  res.status(500).json({ error: err.message || 'Internal Server Error' });
 });
 
 module.exports = app;
