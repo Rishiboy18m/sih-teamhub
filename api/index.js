@@ -19,6 +19,17 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Base Health Check (Placed BEFORE DB init middleware for instant response)
+app.get(['/api/health', '/health'], (req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'SIH TeamHub API',
+    tursoConfigured: !!process.env.TURSO_DATABASE_URL,
+    jwtConfigured: !!process.env.JWT_SECRET,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Ensure DB schema initialization
 let dbInitialized = false;
 let dbInitPromise = null;
@@ -65,11 +76,6 @@ app.use('/ai', aiRoutes);
 app.use('/notifications', notificationsRoutes);
 app.use('/judge', judgeRoutes);
 app.use('/search', searchRoutes);
-
-// Base Health Check
-app.get(['/api/health', '/health'], (req, res) => {
-  res.json({ status: 'ok', service: 'SIH TeamHub API', timestamp: new Date().toISOString() });
-});
 
 // Global Express Error Handler for Serverless Resilience
 app.use((err, req, res, next) => {
