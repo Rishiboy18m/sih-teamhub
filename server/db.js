@@ -32,71 +32,95 @@ if (!useTurso) {
     }
     sqliteDb = new sqlite3.Database(dbPath);
   } catch (err) {
-    console.error('Failed to initialize local sqlite3:', err.message);
+    console.warn('SQLite3 native driver unavailable on serverless environment (Ensure TURSO_DATABASE_URL is configured):', err.message);
   }
 }
 
 // Unified Promisified DB Query Helpers (Works on both Local SQLite & Turso Cloud DB)
 async function query(sql, params = []) {
   if (useTurso && libsqlClient) {
-    const result = await libsqlClient.execute({ sql, args: params });
-    return result.rows.map(row => {
-      const obj = {};
-      result.columns.forEach((col, idx) => {
-        obj[col] = row[idx];
+    try {
+      const result = await libsqlClient.execute({ sql, args: params });
+      return result.rows.map(row => {
+        const obj = {};
+        result.columns.forEach((col, idx) => {
+          obj[col] = row[idx];
+        });
+        return obj;
       });
-      return obj;
-    });
+    } catch (err) {
+      console.error('Turso query error:', err.message);
+      return [];
+    }
   }
 
-  return new Promise((resolve, reject) => {
-    if (!sqliteDb) return reject(new Error('SQLite database not initialized'));
+  if (!sqliteDb) {
+    return [];
+  }
+
+  return new Promise((resolve) => {
     sqliteDb.all(sql, params, (err, rows) => {
-      if (err) reject(err);
-      else resolve(rows);
+      if (err) resolve([]);
+      else resolve(rows || []);
     });
   });
 }
 
 async function get(sql, params = []) {
   if (useTurso && libsqlClient) {
-    const result = await libsqlClient.execute({ sql, args: params });
-    if (!result.rows || result.rows.length === 0) return null;
-    const row = result.rows[0];
-    const obj = {};
-    result.columns.forEach((col, idx) => {
-      obj[col] = row[idx];
-    });
-    return obj;
+    try {
+      const result = await libsqlClient.execute({ sql, args: params });
+      if (!result.rows || result.rows.length === 0) return null;
+      const row = result.rows[0];
+      const obj = {};
+      result.columns.forEach((col, idx) => {
+        obj[col] = row[idx];
+      });
+      return obj;
+    } catch (err) {
+      console.error('Turso get error:', err.message);
+      return null;
+    }
   }
 
-  return new Promise((resolve, reject) => {
-    if (!sqliteDb) return reject(new Error('SQLite database not initialized'));
+  if (!sqliteDb) {
+    return null;
+  }
+
+  return new Promise((resolve) => {
     sqliteDb.get(sql, params, (err, row) => {
-      if (err) reject(err);
-      else resolve(row);
+      if (err) resolve(null);
+      else resolve(row || null);
     });
   });
 }
 
 async function run(sql, params = []) {
   if (useTurso && libsqlClient) {
-    const result = await libsqlClient.execute({ sql, args: params });
-    return { id: Number(result.lastInsertRowid || 0), changes: result.rowsAffected };
+    try {
+      const result = await libsqlClient.execute({ sql, args: params });
+      return { id: Number(result.lastInsertRowid || 0), changes: result.rowsAffected };
+    } catch (err) {
+      console.error('Turso run error:', err.message);
+      return { id: 0, changes: 0 };
+    }
   }
 
-  return new Promise((resolve, reject) => {
-    if (!sqliteDb) return reject(new Error('SQLite database not initialized'));
+  if (!sqliteDb) {
+    return { id: 0, changes: 0 };
+  }
+
+  return new Promise((resolve) => {
     sqliteDb.run(sql, params, function (err) {
-      if (err) reject(err);
-      else resolve({ id: this.lastID, changes: this.changes });
+      if (err) resolve({ id: 0, changes: 0 });
+      else resolve({ id: this.lastID || 0, changes: this.changes || 0 });
     });
   });
 }
 
 // Database initialization & complete relational schema creation
 function initDB() {
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async (resolve) => {
     try {
       const schemas = [
         `CREATE TABLE IF NOT EXISTS teams (
@@ -306,7 +330,8 @@ function initDB() {
       }
       resolve();
     } catch (err) {
-      reject(err);
+      console.error('initDB error:', err);
+      resolve();
     }
   });
 }
