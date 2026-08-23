@@ -121,6 +121,11 @@ async function run(sql, params = []) {
 // Database initialization & complete relational schema creation
 function initDB() {
   return new Promise(async (resolve) => {
+    if (useTurso) {
+      // Turso Cloud DB schema is pre-initialized, bypass redundant cold-start network round-trips
+      return resolve();
+    }
+
     try {
       const schemas = [
         `CREATE TABLE IF NOT EXISTS teams (
