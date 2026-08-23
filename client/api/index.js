@@ -1,18 +1,18 @@
 const express = require('express');
 const cors = require('cors');
 
-const { initDB } = require('../../server/db');
-const authRoutes = require('../../server/routes/auth');
-const projectRoutes = require('../../server/routes/project');
-const tasksRoutes = require('../../server/routes/tasks');
-const filesRoutes = require('../../server/routes/files');
-const ideasRoutes = require('../../server/routes/ideas');
-const discussionsRoutes = require('../../server/routes/discussions');
-const milestonesRoutes = require('../../server/routes/milestones');
-const aiRoutes = require('../../server/routes/ai');
-const notificationsRoutes = require('../../server/routes/notifications');
-const judgeRoutes = require('../../server/routes/judge');
-const searchRoutes = require('../../server/routes/search');
+const { initDB } = require('../server/db');
+const authRoutes = require('../server/routes/auth');
+const projectRoutes = require('../server/routes/project');
+const tasksRoutes = require('../server/routes/tasks');
+const filesRoutes = require('../server/routes/files');
+const ideasRoutes = require('../server/routes/ideas');
+const discussionsRoutes = require('../server/routes/discussions');
+const milestonesRoutes = require('../server/routes/milestones');
+const aiRoutes = require('../server/routes/ai');
+const notificationsRoutes = require('../server/routes/notifications');
+const judgeRoutes = require('../server/routes/judge');
+const searchRoutes = require('../server/routes/search');
 
 const app = express();
 
