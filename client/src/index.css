@@ -1,0 +1,60 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-cream: #FAF5E8;
+    --bg-card: #FFFFFF;
+    --bg-card-sub: #FFFDF7;
+    --border-cream: #EADEC7;
+    --border-cream-dark: #DDD0B6;
+    
+    --teal-main: #58C4C4;
+    --teal-dark: #37A3A3;
+    --teal-hover: #45B8B8;
+    --teal-soft: #E4F7F7;
+    
+    --coral-main: #F48B67;
+    --coral-dark: #D86B47;
+    --coral-soft: #FDF0EC;
+    
+    --yellow-main: #FCD575;
+    --yellow-dark: #E0B445;
+    --yellow-soft: #FFF9E8;
+    
+    --text-primary: #2B2523;
+    --text-secondary: #6B615C;
+    --text-light: #8E837D;
+  }
+
+  body {
+    background-color: var(--bg-cream);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  }
+}
+
+/* Custom Palette Utility Classes */
+.bg-cream-main { background-color: #FAF5E8; }
+.bg-cream-card { background-color: #FFFFFF; }
+.bg-cream-sub { background-color: #FFFDF7; }
+.border-cream-custom { border-color: #EADEC7; }
+
+.bg-teal-brand { background-color: #58C4C4; }
+.bg-teal-brand-dark { background-color: #37A3A3; }
+.bg-teal-brand-soft { background-color: #E4F7F7; }
+.text-teal-brand { color: #37A3A3; }
+.border-teal-brand { border-color: #58C4C4; }
+
+.bg-coral-brand { background-color: #F48B67; }
+.bg-coral-brand-dark { background-color: #D86B47; }
+.bg-coral-brand-soft { background-color: #FDF0EC; }
+.text-coral-brand { color: #D86B47; }
+.border-coral-brand { border-color: #F48B67; }
+
+.bg-yellow-brand { background-color: #FCD575; }
+.bg-yellow-brand-soft { background-color: #FFF9E8; }
+.text-yellow-brand-dark { color: #A67D18; }
+.border-yellow-brand { border-color: #FCD575; }
+
+.text-dark-primary { color: #2B2523; }
+.text-dark-muted { color: #6B615C; }

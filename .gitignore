@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+client/node_modules/
+
+# Production Build Output
+client/dist/
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.production
+
+# Database Files
+server/sih_teamhub.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Uploaded Files
+server/uploads/*
+!server/uploads/.gitkeep
+
+# System & OS Files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Antigravity system logs & artifacts
+.gemini/
