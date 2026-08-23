@@ -14,15 +14,15 @@ function getClient() {
 
   if (process.env.TURSO_DATABASE_URL) {
     try {
-      const { createClient } = require('@libsql/client');
+      const { createClient } = require('@libsql/client/web');
       libsqlClient = createClient({
         url: process.env.TURSO_DATABASE_URL.trim(),
         authToken: (process.env.TURSO_AUTH_TOKEN || '').trim()
       });
-      console.log('⚡ Connected to Turso Cloud SQLite Database for $0 Vercel Persistence');
+      console.log('⚡ Connected to Turso Cloud SQLite Database via Web HTTP Client for Vercel');
       return { libsqlClient, sqliteDb: null, useTurso: true };
     } catch (e) {
-      console.warn('Failed to load @libsql/client:', e.message);
+      console.warn('Failed to load @libsql/client/web:', e.message);
     }
   }
 
