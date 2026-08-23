@@ -1,7 +1,8 @@
-const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
+let sqlite3 = null;
+let sqliteDb = null;
 let libsqlClient = null;
 let useTurso = false;
 
@@ -20,14 +21,19 @@ if (process.env.TURSO_DATABASE_URL) {
   }
 }
 
-// Fallback local or serverless tmp SQLite file
-const dbPath = process.env.DATABASE_PATH || (process.env.VERCEL ? '/tmp/sih_teamhub.db' : path.join(__dirname, 'sih_teamhub.db'));
-const dbDir = path.dirname(dbPath);
-if (!fs.existsSync(dbDir)) {
-  fs.mkdirSync(dbDir, { recursive: true });
+if (!useTurso) {
+  try {
+    sqlite3 = require('sqlite3').verbose();
+    const dbPath = process.env.DATABASE_PATH || (process.env.VERCEL ? '/tmp/sih_teamhub.db' : path.join(__dirname, 'sih_teamhub.db'));
+    const dbDir = path.dirname(dbPath);
+    if (!fs.existsSync(dbDir)) {
+      fs.mkdirSync(dbDir, { recursive: true });
+    }
+    sqliteDb = new sqlite3.Database(dbPath);
+  } catch (err) {
+    console.error('Failed to initialize local sqlite3:', err.message);
+  }
 }
-
-const sqliteDb = new sqlite3.Database(dbPath);
 
 // Unified Promisified DB Query Helpers (Works on both Local SQLite & Turso Cloud DB)
 async function query(sql, params = []) {
@@ -43,6 +49,7 @@ async function query(sql, params = []) {
   }
 
   return new Promise((resolve, reject) => {
+    if (!sqliteDb) return reject(new Error('SQLite database not initialized'));
     sqliteDb.all(sql, params, (err, rows) => {
       if (err) reject(err);
       else resolve(rows);
@@ -63,6 +70,7 @@ async function get(sql, params = []) {
   }
 
   return new Promise((resolve, reject) => {
+    if (!sqliteDb) return reject(new Error('SQLite database not initialized'));
     sqliteDb.get(sql, params, (err, row) => {
       if (err) reject(err);
       else resolve(row);
@@ -77,6 +85,7 @@ async function run(sql, params = []) {
   }
 
   return new Promise((resolve, reject) => {
+    if (!sqliteDb) return reject(new Error('SQLite database not initialized'));
     sqliteDb.run(sql, params, function (err) {
       if (err) reject(err);
       else resolve({ id: this.lastID, changes: this.changes });
