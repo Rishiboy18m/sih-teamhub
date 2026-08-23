@@ -44,7 +44,7 @@ app.use(async (req, res, next) => {
   next();
 });
 
-// Routes
+// Routes (Supported with both /api prefix and direct path for Vercel serverless rewrites)
 app.use('/api/auth', authRoutes);
 app.use('/api/project', projectRoutes);
 app.use('/api/tasks', tasksRoutes);
@@ -57,8 +57,20 @@ app.use('/api/notifications', notificationsRoutes);
 app.use('/api/judge', judgeRoutes);
 app.use('/api/search', searchRoutes);
 
+app.use('/auth', authRoutes);
+app.use('/project', projectRoutes);
+app.use('/tasks', tasksRoutes);
+app.use('/files', filesRoutes);
+app.use('/ideas', ideasRoutes);
+app.use('/discussions', discussionsRoutes);
+app.use('/milestones', milestonesRoutes);
+app.use('/ai', aiRoutes);
+app.use('/notifications', notificationsRoutes);
+app.use('/judge', judgeRoutes);
+app.use('/search', searchRoutes);
+
 // Base Health Check
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({ status: 'ok', service: 'SIH TeamHub API', timestamp: new Date().toISOString() });
 });
 
