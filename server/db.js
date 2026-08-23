@@ -1,30 +1,34 @@
 const path = require('path');
 const fs = require('fs');
 
-let sqlite3 = null;
 let sqliteDb = null;
 let libsqlClient = null;
-let useTurso = false;
+let initializedClient = false;
 
-// Check if Turso Cloud SQLite credentials exist (100% Free Cloud SQLite for Vercel)
-if (process.env.TURSO_DATABASE_URL) {
-  try {
-    const { createClient } = require('@libsql/client');
-    libsqlClient = createClient({
-      url: process.env.TURSO_DATABASE_URL,
-      authToken: process.env.TURSO_AUTH_TOKEN || ''
-    });
-    useTurso = true;
-    console.log('⚡ Connected to Turso Cloud SQLite Database for $0 Vercel Persistence');
-  } catch (e) {
-    console.warn('Failed to load @libsql/client, falling back to local SQLite3:', e.message);
+function getClient() {
+  if (initializedClient) {
+    return { libsqlClient, sqliteDb, useTurso: !!libsqlClient };
   }
-}
 
-if (!useTurso) {
+  initializedClient = true;
+
+  if (process.env.TURSO_DATABASE_URL) {
+    try {
+      const { createClient } = require('@libsql/client');
+      libsqlClient = createClient({
+        url: process.env.TURSO_DATABASE_URL.trim(),
+        authToken: (process.env.TURSO_AUTH_TOKEN || '').trim()
+      });
+      console.log('⚡ Connected to Turso Cloud SQLite Database for $0 Vercel Persistence');
+      return { libsqlClient, sqliteDb: null, useTurso: true };
+    } catch (e) {
+      console.warn('Failed to load @libsql/client:', e.message);
+    }
+  }
+
   try {
     const dynamicRequire = eval('require');
-    sqlite3 = dynamicRequire('sqlite3').verbose();
+    const sqlite3 = dynamicRequire('sqlite3').verbose();
     const dbPath = process.env.DATABASE_PATH || (process.env.VERCEL ? '/tmp/sih_teamhub.db' : path.join(__dirname, 'sih_teamhub.db'));
     const dbDir = path.dirname(dbPath);
     if (!fs.existsSync(dbDir)) {
@@ -32,12 +36,16 @@ if (!useTurso) {
     }
     sqliteDb = new sqlite3.Database(dbPath);
   } catch (err) {
-    console.warn('SQLite3 native driver unavailable on serverless environment (Ensure TURSO_DATABASE_URL is configured):', err.message);
+    console.warn('SQLite3 native driver unavailable:', err.message);
   }
+
+  return { libsqlClient: null, sqliteDb, useTurso: false };
 }
 
 // Unified Promisified DB Query Helpers (Works on both Local SQLite & Turso Cloud DB)
 async function query(sql, params = []) {
+  const { libsqlClient, sqliteDb, useTurso } = getClient();
+
   if (useTurso && libsqlClient) {
     try {
       const result = await libsqlClient.execute({ sql, args: params });
@@ -54,9 +62,7 @@ async function query(sql, params = []) {
     }
   }
 
-  if (!sqliteDb) {
-    return [];
-  }
+  if (!sqliteDb) return [];
 
   return new Promise((resolve) => {
     sqliteDb.all(sql, params, (err, rows) => {
@@ -67,6 +73,8 @@ async function query(sql, params = []) {
 }
 
 async function get(sql, params = []) {
+  const { libsqlClient, sqliteDb, useTurso } = getClient();
+
   if (useTurso && libsqlClient) {
     try {
       const result = await libsqlClient.execute({ sql, args: params });
@@ -83,9 +91,7 @@ async function get(sql, params = []) {
     }
   }
 
-  if (!sqliteDb) {
-    return null;
-  }
+  if (!sqliteDb) return null;
 
   return new Promise((resolve) => {
     sqliteDb.get(sql, params, (err, row) => {
@@ -96,6 +102,8 @@ async function get(sql, params = []) {
 }
 
 async function run(sql, params = []) {
+  const { libsqlClient, sqliteDb, useTurso } = getClient();
+
   if (useTurso && libsqlClient) {
     try {
       const result = await libsqlClient.execute({ sql, args: params });
@@ -106,9 +114,7 @@ async function run(sql, params = []) {
     }
   }
 
-  if (!sqliteDb) {
-    return { id: 0, changes: 0 };
-  }
+  if (!sqliteDb) return { id: 0, changes: 0 };
 
   return new Promise((resolve) => {
     sqliteDb.run(sql, params, function (err) {
@@ -121,8 +127,8 @@ async function run(sql, params = []) {
 // Database initialization & complete relational schema creation
 function initDB() {
   return new Promise(async (resolve) => {
+    const { useTurso } = getClient();
     if (useTurso) {
-      // Turso Cloud DB schema is pre-initialized, bypass redundant cold-start network round-trips
       return resolve();
     }
 
