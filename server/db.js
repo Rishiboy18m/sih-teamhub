@@ -23,7 +23,8 @@ if (process.env.TURSO_DATABASE_URL) {
 
 if (!useTurso) {
   try {
-    sqlite3 = require('sqlite3').verbose();
+    const dynamicRequire = eval('require');
+    sqlite3 = dynamicRequire('sqlite3').verbose();
     const dbPath = process.env.DATABASE_PATH || (process.env.VERCEL ? '/tmp/sih_teamhub.db' : path.join(__dirname, 'sih_teamhub.db'));
     const dbDir = path.dirname(dbPath);
     if (!fs.existsSync(dbDir)) {
