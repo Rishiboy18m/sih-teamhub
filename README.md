@@ -1,31 +1,35 @@
-# 🚀 SIH TeamHub — Production Deployment & Developer Guide
+# 🚀 SIH TeamHub — $0 Free Production Deployment & Developer Guide
 
 **SIH TeamHub** is a production-ready, full-stack collaborative workspace application engineered specifically for teams competing in hackathons such as the **Smart India Hackathon (SIH)**.
 
 ---
 
-## 📁 1. Project Folder & Component Structure
+## 🎨 1. Palette & Design Tokens
 
-- **Frontend Folder**: `client/` (React 18 + Vite + Tailwind CSS v4 + Lucide Icons)
-- **Backend Folder**: `server/` (Node.js + Express REST API + Multer File Storage)
-- **Database**: Relational SQLite3 database (`sih_teamhub.db`) managed via `server/db.js` with `DATABASE_PATH` support.
-- **Environment Configuration**: Root `.env` file (see `.env.example` for variable template).
+| Palette Swatch | Tone | Hex Code | UI Component Implementation |
+| :--- | :--- | :--- | :--- |
+| **Cream Background** | Warm Soft Cream | `#FAF5E8` / `#FFFFFF` | Application background, header bar, sidebar, and container cards |
+| **Mint Teal** | Mint Turquoise Teal | `#58C4C4` / `#37A3A3` | Primary brand accent, active navigation, primary CTAs |
+| **Coral Salmon** | Coral / Salmon Orange | `#F48B67` / `#D86B47` | Critical priority badges, Leader badges, overdue alerts |
+| **Golden Butter** | Golden Butter Yellow | `#FCD575` / `#FFF9E8` | Highlight cards, milestone indicators, code boxes |
+| **Typography** | Deep Espresso Brown | `#2B2523` / `#6B615C` | High-contrast readable typography |
 
 ---
 
-## 🛠️ 2. Technology Stack
+## 📁 2. Project Component Breakdown
 
-- **Frontend**: React 18, Vite, Tailwind CSS v4, Lucide React, Recharts, React Router v6
-- **Backend**: Node.js, Express.js, Cors, Multer, Dotenv
-- **Database**: SQLite3 (18 Relational Tables with `team_id` data isolation)
-- **Security**: JWT Bearer Tokens (`jsonwebtoken`), Password Hashing (`bcryptjs`), File Extension Filters
-- **AI Integration**: Context-Aware Server-Side AI Assistant (`server/routes/ai.js`)
+- **Frontend Folder**: `client/` (React 18 + Vite + Tailwind CSS v4 + Lucide Icons)
+- **Backend Folder**: `server/` (Express REST API) & `api/index.js` (Vercel Serverless Function entrypoint)
+- **Database**: 
+  - *Local*: SQLite3 (`sih_teamhub.db`)
+  - *Vercel $0 Cloud*: **Turso Cloud SQLite** (9 GB Free DB, 0sleep pauses)
+- **Configuration**: Root `vercel.json` & `.env` file (template in `.env.example`).
 
 ---
 
 ## ⚙️ 3. Environment Variables Configuration
 
-Copy `.env.example` to `.env` in the project root and configure your production values:
+Copy `.env.example` to `.env` and fill in values for local or cloud production:
 
 ```env
 # Server Port (Default: 5000)
@@ -37,110 +41,56 @@ NODE_ENV=production
 # Secret Key for JWT Token Generation (Use a strong random string in production)
 JWT_SECRET=your_jwt_secret_key_here
 
-# Database File Path (Default: ./server/sih_teamhub.db)
-DATABASE_PATH=./server/sih_teamhub.db
+# 100% FREE Turso Cloud SQLite Database (Required for Vercel $0 persistence)
+# Create a free DB at https://turso.tech (9 GB Free DB, 0-second sleep delays)
+TURSO_DATABASE_URL=libsql://your-db-name-your-user.turso.io
+TURSO_AUTH_TOKEN=your_turso_auth_token_here
 
-# Frontend API URL Base (Leave as '/api' for single-port deployment)
+# Frontend API URL Base (Leave as '/api' for single-repo Vercel deployment)
 VITE_API_URL=/api
 
 # Optional External AI API Key (Gemini / OpenAI API)
 GEMINI_API_KEY=your_gemini_api_key_here
 ```
 
-> ⚠️ **SECURITY WARNING**: Never commit real `.env` files or API secrets to public repositories!
+---
+
+## 🌐 4. Step-by-Step $0 Vercel Deployment Guide
+
+Deploying **SIH TeamHub** to Vercel is **100% FREE ($0/month)** with zero subscription costs and **instant load times (no sleep delays)**!
+
+### Step 1: Create a Free Cloud SQLite Database on Turso (2 minutes)
+1. Go to **[Turso.tech](https://turso.tech)** and sign up for a free account (No credit card needed!).
+2. Create a new free database:
+   ```bash
+   turso db create sih-teamhub
+   turso db show sih-teamhub
+   ```
+3. Copy your **Database URL** (e.g. `libsql://sih-teamhub-user.turso.io`) and generate an **Auth Token**:
+   ```bash
+   turso db tokens create sih-teamhub
+   ```
+
+### Step 2: Deploy to Vercel for $0
+1. Go to **[Vercel.com](https://vercel.com)** and sign in with your GitHub account.
+2. Click **Add New...** -> **Project**.
+3. Import your repository: **`Rishiboy18m/sih-teamhub`**.
+4. Leave Framework Preset as **Other** (Vercel automatically detects `vercel.json`).
+5. Open the **Environment Variables** section and add:
+   - `NODE_ENV` = `production`
+   - `JWT_SECRET` = `sih_super_secret_jwt_key_2026_x`
+   - `TURSO_DATABASE_URL` = `libsql://sih-teamhub-user.turso.io`
+   - `TURSO_AUTH_TOKEN` = `(Your Turso Token)`
+6. Click **Deploy**!
+
+🎉 Your website is live with **$0 cost forever** at:
+👉 **`https://sih-teamhub.vercel.app`**
 
 ---
 
-## 💻 4. Local Development vs Production Commands
-
-### Local Development Setup
-```bash
-# 1. Install root dependencies
-npm install
-
-# 2. Install client dependencies
-cd client
-npm install
-cd ..
-
-# 3. Start development client (Vite dev server)
-cd client
-npm run dev
-
-# 4. Start backend API server (Node.js Express)
-node server/index.js
-```
-
-### Production Build & Execution Commands
-```bash
-# 1. Build the production React client bundle into client/dist
-cd client
-npm run build
-cd ..
-
-# 2. Start the single-port production server (Hosts both API and Client static assets)
-node server/index.js
-```
-
----
-
-## 🌐 5. Production Deployment Architecture & Hosting Options
-
-### Recommended Architecture: **Single-Service Full-Stack Deployment**
-The Express backend is pre-configured to automatically host static production files from `client/dist` when built. This means you can deploy the entire application (Frontend + Backend + SQLite DB + Uploads) on a single web service.
-
-### Option A: Deploy on **Render.com** (Recommended for Beginners ⭐)
-
-1. **Push Code to GitHub**: Push your project repository to GitHub.
-2. **Create New Web Service on Render**:
-   - Log in to [Render.com](https://render.com) and click **New +** -> **Web Service**.
-   - Connect your GitHub repository.
-3. **Configure Build & Start Settings**:
-   - **Environment**: Node
-   - **Build Command**: `npm install && cd client && npm install && npm run build`
-   - **Start Command**: `node server/index.js`
-4. **Add Environment Variables in Render Dashboard**:
-   - Add `NODE_ENV` = `production`
-   - Add `JWT_SECRET` = `(Generate a long random string)`
-   - Add `PORT` = `10000` (or leave default)
-5. **Attach Persistent Disk (Optional for File Uploads & SQLite persistence)**:
-   - In Render Web Service settings, add a **Persistent Disk** mounted at `/var/data`.
-   - Set environment variable `DATABASE_PATH` = `/var/data/sih_teamhub.db`.
-6. **Deploy**: Click **Create Web Service**. Your app will be live at `https://your-app-name.onrender.com`!
-
----
-
-### Option B: Separate Frontend (Vercel) + Backend (Railway / Render)
-
-If you prefer deploying the frontend and backend on separate services:
-
-1. **Backend Deployment (Railway / Render)**:
-   - Deploy `server/` with Start Command `node server/index.js`.
-   - Set `JWT_SECRET` and `DATABASE_PATH`.
-   - Copy your live backend URL (e.g., `https://sih-backend.up.railway.app`).
-
-2. **Frontend Deployment (Vercel)**:
-   - Connect repository to Vercel.
-   - Set Root Directory to `client`.
-   - Set Environment Variable `VITE_API_URL` = `https://sih-backend.up.railway.app/api`.
-   - Click **Deploy**.
-
----
-
-## 🔑 6. Default Demo Credentials
+## 🔑 5. Default Demo Credentials
 
 | Role | Email | Password | Team Code |
 | :--- | :--- | :--- | :--- |
 | 🛡️ **Team Leader** | `leader@cyberknights.com` | `password123` | `SIH-2026-X` |
 | 👤 **Team Member** | `dev@cyberknights.com` | `password123` | `SIH-2026-X` |
-
----
-
-## 🧪 7. Production Verification Checklist
-
-- [x] Relative `/api` paths used (No hardcoded `localhost` URLs)
-- [x] Single-port production Express static file hosting enabled (`client/dist`)
-- [x] File extension security filter & 50MB upload size limit enforced
-- [x] Password hashes stripped from JSON API responses
-- [x] Multi-tenant team data isolation verified across 18 SQLite tables
-- [x] Frontend compiled into production bundle (`npm run build`: 0 errors)
